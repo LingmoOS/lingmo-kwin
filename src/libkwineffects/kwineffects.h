@@ -321,6 +321,8 @@ public:
          * Clear whole background as the very first step, without optimizing it
          */
         PAINT_SCREEN_BACKGROUND_FIRST = 1 << 6,
+
+        PAINT_WINDOW_LANCZOS = 1 << 8
     };
 
     enum Feature {
