@@ -487,6 +487,151 @@ private:
     bool mForeign = false;
 };
 
+// Why kwin del 'GLRenderTarget'?
+// Add 'GLRenderTarget' public
+class KWINGLUTILS_EXPORT GLRenderTarget
+{
+public:
+    explicit GLRenderTarget();
+    explicit GLRenderTarget(const GLTexture& color);
+    ~GLRenderTarget();
+    bool enable();
+    bool disable();
+
+    /**
+     * Sets the target texture
+     * @param target texture where the scene will be rendered on
+     * @since 4.8
+     */
+    void attachTexture(const GLTexture& target);
+
+    /**
+     * Detaches the texture that is currently attached to this framebuffer object.
+     * @since 5.13
+     */
+    void detachTexture();
+
+    bool valid() const  {
+        return mValid;
+    }
+
+    void setTextureDirty() {
+        mTexture.setDirty();
+    }
+
+    static void initStatic();
+    static bool supported()  {
+        return sSupported;
+    }
+
+    /**
+     * Pushes the render target stack of the input parameter in reverse order.
+     * @param targets The stack of GLRenderTargets
+     * @since 5.13
+     */
+    static void pushRenderTargets(QStack <GLRenderTarget*> targets);
+
+    static void pushRenderTarget(GLRenderTarget *target);
+    static GLRenderTarget *popRenderTarget();
+    static bool isRenderTargetBound();
+    /**
+     * Whether the GL_EXT_framebuffer_blit extension is supported.
+     * This functionality is not available in OpenGL ES 2.0.
+     *
+     * @returns whether framebuffer blitting is supported.
+     * @since 4.8
+     */
+    static bool blitSupported();
+
+    /**
+     * Blits the content of the current draw framebuffer into the texture attached to this FBO.
+     *
+     * Be aware that framebuffer blitting may not be supported on all hardware. Use blitSupported to check whether
+     * it is supported.
+     * @param source Geometry in screen coordinates which should be blitted, if not specified complete framebuffer is used
+     * @param destination Geometry in attached texture, if not specified complete texture is used as destination
+     * @param filter The filter to use if blitted content needs to be scaled.
+     * @see blitSupported
+     * @since 4.8
+     */
+    void blitFromFramebuffer(const QRect &source = QRect(), const QRect &destination = QRect(), GLenum filter = GL_LINEAR);
+
+    /**
+     * Sets the virtual screen size to @p s.
+     * @since 5.2
+     */
+    static void setVirtualScreenSize(const QSize &s) {
+        s_virtualScreenSize = s;
+    }
+
+    /**
+     * Sets the virtual screen geometry to @p g.
+     * This is the geometry of the OpenGL window currently being rendered to
+     * in the virtual geometry space the rendering geometries use.
+     * @see virtualScreenGeometry
+     * @since 5.9
+     */
+    static void setVirtualScreenGeometry(const QRect &g) {
+        s_virtualScreenGeometry = g;
+    }
+
+    /**
+     * The geometry of the OpenGL window currently being rendered to
+     * in the virtual geometry space the rendering system uses.
+     * @see setVirtualScreenGeometry
+     * @since 5.9
+     */
+    static QRect virtualScreenGeometry() {
+        return s_virtualScreenGeometry;
+    }
+
+    /**
+     * The scale of the OpenGL window currently being rendered to
+     *
+     * @returns the ratio between the virtual geometry space the rendering
+     * system uses and the target
+     * @since 5.10
+     */
+    static void setVirtualScreenScale(qreal scale) {
+        s_virtualScreenScale = scale;
+    }
+
+    static qreal virtualScreenScale() {
+        return s_virtualScreenScale;
+    }
+
+    /**
+     * The framebuffer of KWin's OpenGL window or other object currently being rendered to
+     *
+     * @since 5.18
+     */
+    static void setKWinFramebuffer(GLuint fb) {
+        s_kwinFramebuffer = fb;
+    }
+
+
+protected:
+    void initFBO();
+
+
+private:
+    friend void KWin::cleanupGL();
+    static void cleanup();
+    static bool sSupported;
+    static bool s_blitSupported;
+    static QStack<GLRenderTarget*> s_renderTargets;
+    static QSize s_virtualScreenSize;
+    static QRect s_virtualScreenGeometry;
+    static qreal s_virtualScreenScale;
+    static GLint s_virtualScreenViewport[4];
+    static GLuint s_kwinFramebuffer;
+
+    GLTexture mTexture;
+    bool mValid;
+
+    GLuint mFramebuffer;
+};
+
 enum VertexAttributeType {
     VA_Position = 0,
     VA_TexCoord = 1,

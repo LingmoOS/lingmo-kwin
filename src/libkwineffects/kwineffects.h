@@ -10,6 +10,9 @@
     SPDX-License-Identifier: GPL-2.0-or-later
 */
 
+#ifndef KWINEFFECTS_H
+#define KWINEFFECTS_H
+
 #pragma once
 
 #include <kwinconfig.h>
@@ -80,6 +83,7 @@ class OffscreenQuickView;
 class EffectScreen;
 class Effect;
 class WindowQuad;
+class GLShader;
 class WindowQuadList;
 class WindowPrePaintData;
 class WindowPaintData;
@@ -322,7 +326,12 @@ public:
          */
         PAINT_SCREEN_BACKGROUND_FIRST = 1 << 6,
 
+        // PAINT_DECORATION_ONLY = 1 << 7 has been deprecated
+        /**
+         * Window will be painted with a lanczos filter.
+         */
         PAINT_WINDOW_LANCZOS = 1 << 8
+        // PAINT_SCREEN_WITH_TRANSFORMED_WINDOWS_WITHOUT_FULL_REPAINTS = 1 << 9 has been removed
     };
 
     enum Feature {
@@ -445,6 +454,9 @@ public:
      * when this method is invoked.
      */
     virtual void postPaintWindow(EffectWindow *w);
+
+    // shader
+    virtual void paintEffectFrame(EffectFrame *frame, const QRegion &region, double opacity, double frameOpacity);
 
     /**
      * Called on Transparent resizes.
@@ -1175,6 +1187,7 @@ public:
      * @return bool @c true in case of OpenGL based Compositor, @c false otherwise
      */
     bool isOpenGLCompositing() const;
+    virtual unsigned long xrenderBufferPicture() = 0;
     /**
      * @brief Provides access to the QPainter which is rendering to the back buffer.
      *
@@ -2076,6 +2089,7 @@ class EffectWindowVisibleRef;
 class KWINEFFECTS_EXPORT EffectWindow : public QObject
 {
     Q_OBJECT
+    Q_PROPERTY(bool alpha READ hasAlpha CONSTANT)
     Q_PROPERTY(QRectF geometry READ geometry)
     Q_PROPERTY(QRectF expandedGeometry READ expandedGeometry)
     Q_PROPERTY(qreal height READ height)
@@ -2374,6 +2388,9 @@ public:
     explicit EffectWindow();
     ~EffectWindow() override;
 
+    virtual void enablePainting(int reason) = 0;
+    virtual void disablePainting(int reason) = 0;
+    virtual bool isPaintingEnabled() = 0;
     Q_SCRIPTABLE virtual void addRepaint(const QRect &r) = 0;
     Q_SCRIPTABLE void addRepaint(int x, int y, int w, int h);
     Q_SCRIPTABLE virtual void addRepaintFull() = 0;
@@ -2387,6 +2404,7 @@ public:
 
     virtual bool isMinimized() const = 0;
     virtual double opacity() const = 0;
+    virtual bool hasAlpha() const = 0;
 
     bool isOnCurrentActivity() const;
     Q_SCRIPTABLE bool isOnActivity(const QString &id) const;
@@ -2956,6 +2974,8 @@ public:
     WindowQuadList splitAtY(double y) const;
     WindowQuadList makeGrid(int maxquadsize) const;
     WindowQuadList makeRegularGrid(int xSubdivisions, int ySubdivisions) const;
+    void makeInterleavedArrays(unsigned int type, GLVertex2D *vertices, const QMatrix4x4 &matrix) const;
+    void makeArrays(float **vertices, float **texcoords, const QSizeF &size, bool yInverted) const;
 };
 
 /**
@@ -3015,7 +3035,9 @@ public:
      * @param destination The destination buffer. This needs to be at least large
      *                    enough to contain all elements.
      */
-    void copy(std::span<GLVertex2D> destination);
+
+    // In Lingmo OS, void copy(std::span<GLVertex2D> destination); will not be referenced
+    // void copy(std::span<GLVertex2D> destination);
     /**
      * Append a WindowVertex as a geometry vertex.
      *
@@ -3428,6 +3450,41 @@ public:
     QMatrix4x4 &rprojectionMatrix();
 
     /**
+     * Sets the model-view matrix that will be used when painting the window.
+     *
+     * The default model-view matrix can be overridden by setting this matrix
+     * to a non-identity matrix.
+     */
+    void setModelViewMatrix(const QMatrix4x4 &matrix);
+
+    /**
+     * Returns the current model-view matrix.
+     *
+     * The default value for this matrix is the identity matrix.
+     */
+    QMatrix4x4 modelViewMatrix() const;
+
+    /**
+     * Returns a reference to the model-view matrix.
+     */
+    QMatrix4x4 &rmodelViewMatrix();
+
+    /**
+     * Returns The projection matrix as used by the current screen painting pass
+     * including screen transformations.
+     *
+     * @since 5.6
+     */
+    QMatrix4x4 screenProjectionMatrix() const;
+
+    WindowQuadList quads;
+
+    /**
+     * Shader to be used for rendering, if any.
+     */
+    GLShader *shader;
+
+    /**
      * An override for the scale the window should be rendered at.
      *
      * When set, this value will be used instead of the window's output scale
@@ -3438,6 +3495,7 @@ public:
 
 private:
     const std::unique_ptr<WindowPaintDataPrivate> d;
+    // WindowPaintDataPrivate *const d;
 };
 
 class KWINEFFECTS_EXPORT ScreenPaintData
@@ -3815,6 +3873,22 @@ public:
     virtual const QIcon &icon() const = 0;
     virtual void setIconSize(const QSize &size) = 0;
     virtual const QSize &iconSize() const = 0;
+
+    /**
+     * Sets the geometry of a selection.
+     * To remove the selection set a null rect.
+     * @param selection The geometry of the selection in screen coordinates.
+     */
+    virtual void setSelection(const QRect &selection) = 0;
+
+    /**
+     * @param shader The GLShader for rendering.
+     */
+    virtual void setShader(GLShader *shader) = 0;
+    /**
+     * @returns The GLShader used for rendering or null if none.
+     */
+    virtual GLShader *shader() const = 0;
 
     /**
      * @returns The style of this EffectFrame.
@@ -4299,3 +4373,4 @@ Q_DECLARE_METATYPE(KWin::TimeLine)
 Q_DECLARE_METATYPE(KWin::TimeLine::Direction)
 
 /** @} */
+#endif // KWINEFFECTS_H

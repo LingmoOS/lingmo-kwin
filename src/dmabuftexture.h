@@ -14,6 +14,7 @@
 
 namespace KWin
 {
+class GLRenderTarget;
 class GLFramebuffer;
 class GLTexture;
 
@@ -26,9 +27,11 @@ public:
     const DmaBufAttributes &attributes() const;
     GLTexture *texture() const;
     GLFramebuffer *framebuffer() const;
+    KWin::GLRenderTarget* framebuffer() const;
 
 protected:
     std::shared_ptr<GLTexture> m_texture;
+    QScopedPointer<KWin::GLRenderTarget> m_framebuffer;
     std::unique_ptr<GLFramebuffer> m_framebuffer;
     DmaBufAttributes m_attributes;
 };

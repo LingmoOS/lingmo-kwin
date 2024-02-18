@@ -280,6 +280,8 @@ public:
     QPoint pos() const;
     QSize size() const;
     QRect rect() const;
+    bool isPaintingEnabled() const;
+    void resetPaintingEnabled();
     // access to the internal window class
     // TODO eventually get rid of this
     Window *window() const;

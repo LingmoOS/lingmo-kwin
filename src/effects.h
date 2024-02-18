@@ -385,6 +385,7 @@ public:
     void addRepaint(const QRect &r) override;
     void addRepaintFull() override;
     void addLayerRepaint(const QRect &r) override;
+    bool isPaintingEnabled() override;
 
     void refWindow() override;
     void unrefWindow() override;
