@@ -387,6 +387,10 @@ public:
     void addLayerRepaint(const QRect &r) override;
     bool isPaintingEnabled() override;
 
+    void enablePainting(int reason) override;
+    void disablePainting(int reason) override;
+
+
     void refWindow() override;
     void unrefWindow() override;
 
@@ -396,6 +400,8 @@ public:
     bool isMinimized() const override;
     bool isHidden() const override;
     double opacity() const override;
+
+    bool hasAlpha() const override;
 
     QStringList activities() const override;
     int desktop() const override;

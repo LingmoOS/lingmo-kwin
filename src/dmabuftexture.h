@@ -5,35 +5,33 @@
 */
 
 #pragma once
-
 #include "kwin_export.h"
-
 #include "core/dmabufattributes.h"
-
+#include <QScopedPointer>
 #include <memory>
 
 namespace KWin
 {
-class GLRenderTarget;
-class GLFramebuffer;
-class GLTexture;
+    class GLFramebuffer;
+    class GLTexture;
 
-class KWIN_EXPORT DmaBufTexture
-{
-public:
-    explicit DmaBufTexture(std::shared_ptr<GLTexture> texture, DmaBufAttributes &&attributes);
-    virtual ~DmaBufTexture();
+    class KWIN_EXPORT DmaBufTexture
+    {
+    public:
+        explicit DmaBufTexture(const std::shared_ptr<GLTexture>& texture, DmaBufAttributes &&attributes);
+        virtual ~DmaBufTexture();
 
-    const DmaBufAttributes &attributes() const;
-    GLTexture *texture() const;
-    GLFramebuffer *framebuffer() const;
-    KWin::GLRenderTarget* framebuffer() const;
+//        virtual quint32 stride() const = 0;
+//        virtual int fd() const = 0;
+        const DmaBufAttributes& attributes() const;
+        KWin::GLTexture *texture() const;
+        KWin::GLFramebuffer *framebuffer() const;
 
-protected:
-    std::shared_ptr<GLTexture> m_texture;
-    QScopedPointer<KWin::GLRenderTarget> m_framebuffer;
-    std::unique_ptr<GLFramebuffer> m_framebuffer;
-    DmaBufAttributes m_attributes;
-};
+    protected:
+        QScopedPointer<KWin::GLTexture> m_texture;
+        QScopedPointer<KWin::GLFramebuffer> m_framebuffer;
+        DmaBufAttributes m_attributes;
+    };
 
 }
+

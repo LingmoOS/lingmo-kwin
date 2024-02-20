@@ -2343,6 +2343,22 @@ bool EffectWindowImpl::isX11Client() const
     return m_x11Window;
 }
 
+bool EffectWindowImpl::isPaintingEnabled() {
+    return false;
+}
+
+void EffectWindowImpl::enablePainting(int reason) {
+
+}
+
+void EffectWindowImpl::disablePainting(int reason) {
+
+}
+
+bool EffectWindowImpl::hasAlpha() const {
+    return false;
+}
+
 //****************************************
 // EffectWindowGroupImpl
 //****************************************
