@@ -493,7 +493,7 @@ class KWINGLUTILS_EXPORT GLRenderTarget
 {
 public:
     explicit GLRenderTarget();
-    explicit GLRenderTarget(const GLTexture& color);
+    explicit GLRenderTarget(GLTexture *color);
     ~GLRenderTarget();
     bool enable();
     bool disable();

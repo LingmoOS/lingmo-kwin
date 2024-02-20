@@ -456,7 +456,8 @@ public:
     virtual void postPaintWindow(EffectWindow *w);
 
     // shader
-    virtual void paintEffectFrame(EffectFrame *frame, const QRegion &region, double opacity, double frameOpacity);
+    // ToDo: Implement this function
+    // virtual void paintEffectFrame(EffectFrame *frame, const QRegion &region, double opacity, double frameOpacity);
 
     /**
      * Called on Transparent resizes.
@@ -1187,7 +1188,7 @@ public:
      * @return bool @c true in case of OpenGL based Compositor, @c false otherwise
      */
     bool isOpenGLCompositing() const;
-    virtual unsigned long xrenderBufferPicture() = 0;
+    //virtual unsigned long xrenderBufferPicture() = 0;
     /**
      * @brief Provides access to the QPainter which is rendering to the back buffer.
      *
@@ -3037,7 +3038,7 @@ public:
      */
 
     // In Lingmo OS, void copy(std::span<GLVertex2D> destination); will not be referenced
-    // void copy(std::span<GLVertex2D> destination);
+    void copy(std::span<GLVertex2D> destination);
     /**
      * Append a WindowVertex as a geometry vertex.
      *
@@ -3879,16 +3880,16 @@ public:
      * To remove the selection set a null rect.
      * @param selection The geometry of the selection in screen coordinates.
      */
-    virtual void setSelection(const QRect &selection) = 0;
+    // virtual void setSelection(const QRect &selection) = 0;
 
     /**
      * @param shader The GLShader for rendering.
      */
-    virtual void setShader(GLShader *shader) = 0;
+    // virtual void setShader(GLShader *shader) = 0;
     /**
      * @returns The GLShader used for rendering or null if none.
      */
-    virtual GLShader *shader() const = 0;
+    // virtual GLShader *shader() const = 0;
 
     /**
      * @returns The style of this EffectFrame.

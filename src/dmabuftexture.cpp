@@ -6,34 +6,36 @@
 
 #include "dmabuftexture.h"
 
+#include "kwineglimagetexture.h"
 #include "kwinglutils.h"
-
-#include <unistd.h>
 
 namespace KWin
 {
 
-DmaBufTexture::DmaBufTexture(std::shared_ptr<GLTexture> texture, DmaBufAttributes &&attributes)
-    : m_texture(texture)
-    , m_framebuffer(std::make_unique<GLFramebuffer>(texture.get()))
-    , m_attributes(std::move(attributes))
-{
-}
-DmaBufTexture::~DmaBufTexture() = default;
+    DmaBufTexture::DmaBufTexture(const std::shared_ptr<GLTexture>& texture, DmaBufAttributes &&attributes)
+            : m_texture{texture.get()}
+            , m_framebuffer(new KWin::GLFramebuffer(texture.get()))
+            , m_attributes{std::move(attributes)}
+    {
+    }
 
-const DmaBufAttributes &DmaBufTexture::attributes() const
-{
-    return m_attributes;
-}
 
-KWin::GLTexture *DmaBufTexture::texture() const
-{
-    return m_texture.get();
-}
+    const DmaBufAttributes &DmaBufTexture::attributes() const
+    {
+        return m_attributes;
+    }
 
-KWin::GLFramebuffer *DmaBufTexture::framebuffer() const
-{
-    return m_framebuffer.get();
-}
+    DmaBufTexture::~DmaBufTexture() = default;
+
+    KWin::GLTexture *DmaBufTexture::texture() const
+    {
+        return m_texture.data();
+    }
+
+    KWin::GLFramebuffer *DmaBufTexture::framebuffer() const
+    {
+        return m_framebuffer.data();
+    }
 
 } // namespace KWin
+
