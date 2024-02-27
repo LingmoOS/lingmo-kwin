@@ -1,0 +1,2 @@
+lingmo-kwin-wayland: no-manual-page [usr/bin/kwin_wayland]
+lingmo-kwin-wayland: no-manual-page [usr/bin/kwin_wayland_wrapper]

@@ -1,0 +1,6 @@
+lingmo-kwin-common: package-name-doesnt-match-sonames libkcmkwincommon5 libkwin5
+lingmo-kwin-common: lacks-unversioned-link-to-shared-library example: usr/lib/*/libkwin.so [usr/lib/*/libkwin.so.*]
+lingmo-kwin-common: lacks-unversioned-link-to-shared-library example: usr/lib/*/libkcmkwincommon.so [usr/lib/*/libkcmkwincommon.so.*]
+# we don’t ship header files for these, so no need for control files
+lingmo-kwin-common: no-symbols-control-file usr/lib/x86_64-linux-gnu/libkcmkwincommon.so.5.*
+lingmo-kwin-common: no-symbols-control-file usr/lib/x86_64-linux-gnu/libkwin.so.5.*
