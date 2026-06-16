@@ -1,6 +1,6 @@
-# Deepin KWin
+# Lingmo KWin
 
-deepin-kwin is deepin desktop environment's core window manager, customized based on KWin 5.27 with Qt6/KF6 support. KWin is an easy to use, but flexible, composited Window Manager for Xorg windowing systems (Wayland, X11) on Linux. Its primary usage is in conjunction with a Desktop Shell (e.g. KDE Plasma Desktop). KWin is designed to go out of the way; users should not notice that they use a window manager at all. Nevertheless KWin provides a steep learning curve for advanced features, which are available, if they do not conflict with the primary mission. KWin does not have a dedicated targeted user group, but follows the targeted user group of the Desktop Shell using KWin as it's window manager.
+lingmo-kwin is lingmo velora desktop environment's core window manager, customized based on deepin-kwin. KWin is an easy to use, but flexible, composited Window Manager for Xorg windowing systems (Wayland, X11) on Linux. Its primary usage is in conjunction with a Desktop Shell (e.g. KDE Plasma Desktop). KWin is designed to go out of the way; users should not notice that they use a window manager at all. Nevertheless KWin provides a steep learning curve for advanced features, which are available, if they do not conflict with the primary mission. KWin does not have a dedicated targeted user group, but follows the targeted user group of the Desktop Shell using KWin as it's window manager.
 
 ## Build Requirements
 
@@ -11,17 +11,12 @@ deepin-kwin is deepin desktop environment's core window manager, customized base
 ## Compilation & Installation
 
 ```
-git clone https://github.com/linuxdeepin/deepin-kwin.git
-cd deepin-kwin
+git clone https://github.com/LingmoOS/lingmo-kwin.git
+cd lingmo-kwin
 cmake -B build -DCMAKE_INSTALL_PREFIX=/usr
 cmake --build build
 cmake --install build
 ```
-
-## Getting Involved
-
-- [Code contribution via GitHub](https://github.com/linuxdeepin/deepin-kwin/)
-- [Submit bug or suggestions to GitHub Issues or GitHub Discussions](https://github.com/linuxdeepin/developer-center/issues/new/choose)
 
 ## Guidelines for new features
 
@@ -44,4 +39,4 @@ The same non functional requirements hold true for any kind of plugins (effects,
 
 ## License
 
-**deepin-kwin** is licensed under GPL-2.0-or-later.
+**lingmo-kwin** is licensed under GPL-2.0-or-later.

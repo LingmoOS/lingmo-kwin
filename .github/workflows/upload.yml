@@ -30,6 +30,7 @@ jobs:
 
       - name: Build source package
         run: |
+          chmod +x src/effects/strip-effect-metadata.py
           dpkg-buildpackage -S -us -uc -d
       
       - name: Collect files
