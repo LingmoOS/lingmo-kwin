@@ -196,7 +196,6 @@ Description: KDE window manager, wayland version, PREVIEW release
  This package provides the wayland version, which is still a work in progress
  project, and is available as a PREVIEW release. Don't expect the same
  stability as with the x11 version.
-Breaks: plasma-workspace-wayland (<< 4:5.14),
 
 Package: lingmo-kwin-x11
 Architecture: any
