@@ -111,8 +111,8 @@ Q_GLOBAL_STATIC_WITH_ARGS(QGSettings, _gsettings_dde_appearance, ("com.deepin.dd
 const char notification_tips[] = "dde-osd dde-osd";
 const char screen_recorder[] = "deepin-screen-recorder deepin-screen-recorder";
 const char split_outline[] = "kwin_x11 kwin";
-const char fallback_background_name[] = "file:///usr/share/wallpapers/deepin/desktop.jpg";
-const char previous_default_background_name[] = "file:///usr/share/backgrounds/default_background.jpg";
+const char fallback_background_name[] = "file:///usr/share/wallpapers/lingmo/default.jpg";
+const char previous_default_background_name[] = "file:///usr/share/wallpapers/lingmo/default.jpg";
 const char add_workspace_png[] = ":/effects/multitaskview/buttons/add-light.png";//":/resources/themes/add-light.svg";
 const char delete_workspace_png[] = ":/effects/multitaskview/buttons/workspace_delete.svg";
 const char defaultSecondBackgroundUri[] = "francesco-ungaro-1fzbUyzsHV8-unsplash";
