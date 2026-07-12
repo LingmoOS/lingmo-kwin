@@ -34,8 +34,8 @@
 
 #include <unistd.h>
 
-#define ProhibitScreenshotDBusService "com.deepin.prohibitscreenshot"
-#define ProhibitScreenshotDBusPath "/com/deepin/prohibitscreenshot"
+#define ProhibitScreenshotDBusService "com.lingmo.prohibitscreenshot"
+#define ProhibitScreenshotDBusPath "/com/lingmo/prohibitscreenshot"
 #define ProhibitScreenshotDBusInterface "deepin.prohibitscreenshot.interface"
 #define KWIN_BLACK_PIXMAP "kwin_screenshot_prohibit.jpg"
 namespace KWin

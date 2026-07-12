@@ -155,7 +155,7 @@ void Workspace::registerDDESession() const
     qunsetenv(cookie.toLocal8Bit().constData());
 
     if (!cookie.isEmpty()) {
-        QDBusInterface("com.deepin.SessionManager", "/com/deepin/SessionManager").call("Register", cookie);
+        QDBusInterface("com.lingmo.SessionManager", "/com/lingmo/SessionManager").call("Register", cookie);
     }
 }
 
@@ -981,7 +981,7 @@ bool X11Window::buttonPressEvent(xcb_window_t w, int button, int state, int x, i
     if (isInteractiveMoveResizePointerButtonDown()) {
         //Click on the parent window of the modal dialog box to play the prompt sound.
         if (!transients().isEmpty() && transients().last()->isModal()) {
-            QDBusInterface soundEffect("com.deepin.daemon.SoundEffect", "/com/deepin/daemon/SoundEffect");
+            QDBusInterface soundEffect("com.lingmo.daemon.SoundEffect", "/com/lingmo/daemon/SoundEffect");
             soundEffect.asyncCall("PlaySystemSound", "dialog-error");
         }
         if (w == wrapperId()) {

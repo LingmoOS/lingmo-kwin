@@ -39,7 +39,7 @@ namespace KWin
 {
 
 DBusDock::DBusDock(QObject *parent)
-    : QDBusAbstractInterface("com.deepin.dde.daemon.Dock", "/com/deepin/dde/daemon/Dock", staticInterfaceName(), QDBusConnection::sessionBus(), parent)
+    : QDBusAbstractInterface("com.lingmo.daemon.Dock", "/com/lingmo/daemon/Dock", staticInterfaceName(), QDBusConnection::sessionBus(), parent)
 {
     qRegisterMetaType<DockRect>("DockRect");
     qDBusRegisterMetaType<DockRect>();

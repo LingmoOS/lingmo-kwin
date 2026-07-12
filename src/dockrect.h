@@ -46,7 +46,7 @@ class DBusDock: public QDBusAbstractInterface
         if (3 != arguments.count())
             return;
         QString interfaceName = msg.arguments().at(0).toString();
-        if (interfaceName !="com.deepin.dde.daemon.Dock")
+        if (interfaceName !="com.lingmo.daemon.Dock")
             return;
         QVariantMap changedProps = qdbus_cast<QVariantMap>(arguments.at(1).value<QDBusArgument>());
         for(const QString &prop : changedProps.keys()) {

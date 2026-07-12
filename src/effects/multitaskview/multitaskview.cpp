@@ -738,7 +738,7 @@ MultitaskViewEffect::MultitaskViewEffect()
 
     QDBusConnection::sessionBus().connect(DBUS_DEEPIN_WM_SERVICE, DBUS_DEEPIN_WM_OBJ, DBUS_DEEPIN_WM_INTF,
                                         "ShowWorkspaceChanged", this, SLOT(toggle()));
-    QDBusConnection::sessionBus().connect("com.deepin.ScreenRecorder.time", "/com/deepin/ScreenRecorder/time", "com.deepin.ScreenRecorder.time", "start", this, SLOT(screenRecorderStart()));
+    QDBusConnection::sessionBus().connect("com.lingmo.ScreenRecorder.time", "/com/lingmo/ScreenRecorder/time", "com.lingmo.ScreenRecorder.time", "start", this, SLOT(screenRecorderStart()));
 
     m_addingDesktopTimer.setInterval(200);
     m_addingDesktopTimer.setSingleShot(true);

@@ -180,7 +180,7 @@ static QString toRealPath(const QString &path)
 void SplitSwapEffect::initDBusInterfaces()
 {
     if (!m_wmInterface || !m_wmInterface->isValid()) {
-        m_wmInterface = new QDBusInterface("com.deepin.wm", "/com/deepin/wm", "com.deepin.wm", QDBusConnection::sessionBus(), this);
+        m_wmInterface = new QDBusInterface("com.lingmo.wm", "/com/lingmo/wm", "com.lingmo.wm", QDBusConnection::sessionBus(), this);
         m_wmInterface->setTimeout(100);
     }
     if (!m_imageBlurInterface || !m_imageBlurInterface->isValid()) {
