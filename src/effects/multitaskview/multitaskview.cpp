@@ -312,6 +312,25 @@ QPixmap MultiViewBackgroundManager::getCachePix(const QSize &size, QPair<QSize, 
     return QPixmap();
 }
 
+// 同一 (桌面,屏幕) 下，每种缓存同时在用的条目只有 1 条
+// （原图进 wp 缓存、模糊图进 bg 缓存），这里留一点余量。
+static constexpr int kMaxCachedBackgroundsPerScreen = 3;
+
+void MultiViewBackgroundManager::insertCachedBackground(QHash<QString, QPair<QSize, QPixmap>> &cache,
+                                                        QHash<QString, QList<QString>> &cachedUris,
+                                                        const QString &path, const QString &uri,
+                                                        const QPair<QSize, QPixmap> &value)
+{
+    QList<QString> &uris = cachedUris[path];
+    if (!uris.contains(uri))
+        uris.append(uri);
+    cache.insert(uri + path, value);
+
+    while (uris.size() > kMaxCachedBackgroundsPerScreen) {
+        cache.remove(uris.takeFirst() + path);
+    }
+}
+
 void MultiViewBackgroundManager::getWorkspaceBgPath(BgInfo_st &st, QPixmap &desktopBg, QPixmap &workspaceBg)
 {
     QString strBackgroundPath = QString("%1%2").arg(st.desktop).arg(st.screenName);
@@ -327,7 +346,8 @@ void MultiViewBackgroundManager::getWorkspaceBgPath(BgInfo_st &st, QPixmap &desk
     }
     if (workspaceBg.isNull()) {
         QPixmap pixmap = cutBackgroundPix(st.workspaceSize, backgroundUri);
-        m_wpCachedPixmaps[backgroundUri + strBackgroundPath] = qMakePair(st.workspaceSize, pixmap);
+        insertCachedBackground(m_wpCachedPixmaps, m_wpCachedUris, strBackgroundPath,
+                               backgroundUri, qMakePair(st.workspaceSize, pixmap));
         workspaceBg = pixmap;
     }
 
@@ -344,7 +364,8 @@ void MultiViewBackgroundManager::getWorkspaceBgPath(BgInfo_st &st, QPixmap &desk
     }
     if (desktopBg.isNull()) {
         QPixmap pixmap = cutBackgroundPix(st.desktopSize, backgroundUri);
-        m_bgCachedPixmaps[backgroundUri + strBackgroundPath] = qMakePair(st.desktopSize, pixmap);
+        insertCachedBackground(m_bgCachedPixmaps, m_bgCachedUris, strBackgroundPath,
+                               backgroundUri, qMakePair(st.desktopSize, pixmap));
         desktopBg = pixmap;
     }
 
@@ -362,9 +383,11 @@ void MultiViewBackgroundManager::cacheWorkspaceBg(BgInfo_st &st)
         if (!backgroundUri.isEmpty()) {
             backgroundUri = toRealPath(backgroundUri);
             QPixmap pixmap = cutBackgroundPix(st.desktopSize, backgroundUri);
-            m_bgCachedPixmaps[backgroundUri + strBackgroundPathkey] = qMakePair(st.desktopSize, pixmap);
+            insertCachedBackground(m_bgCachedPixmaps, m_bgCachedUris, strBackgroundPathkey,
+                                   backgroundUri, qMakePair(st.desktopSize, pixmap));
             pixmap = cutBackgroundPix(st.workspaceSize, backgroundUri);
-            m_wpCachedPixmaps[backgroundUri + strBackgroundPathkey] = qMakePair(st.workspaceSize, pixmap);
+            insertCachedBackground(m_wpCachedPixmaps, m_wpCachedUris, strBackgroundPathkey,
+                                   backgroundUri, qMakePair(st.workspaceSize, pixmap));
         }
     }
 }
@@ -493,7 +516,8 @@ void MultiViewBackgroundManager::setNewBackground(BgInfo_st &st, QPixmap &deskto
     file = toRealPath(file);
 
     workspaceBg = cutBackgroundPix(st.workspaceSize, file);
-    m_wpCachedPixmaps[file + strBackgroundPath] = qMakePair(st.workspaceSize, workspaceBg);
+    insertCachedBackground(m_wpCachedPixmaps, m_wpCachedUris, strBackgroundPath,
+                           file, qMakePair(st.workspaceSize, workspaceBg));
 
     QDBusInterface imageBlurInterface(DBUS_IMAGEEFFECT_SERVICE, DBUS_BLUR_OBJ, DBUS_BLUR_INTF, QDBusConnection::systemBus());
     imageBlurInterface.setTimeout(100);
@@ -501,7 +525,8 @@ void MultiViewBackgroundManager::setNewBackground(BgInfo_st &st, QPixmap &deskto
     if (!blurReply.value().isEmpty())
         file = toRealPath(QString(blurReply.value()));
     desktopBg = cutBackgroundPix(st.desktopSize, file);
-    m_bgCachedPixmaps[file + strBackgroundPath] = qMakePair(st.desktopSize, desktopBg);
+    insertCachedBackground(m_bgCachedPixmaps, m_bgCachedUris, strBackgroundPath,
+                           file, qMakePair(st.desktopSize, desktopBg));
 }
 
 void MultiViewBackgroundManager::setMonitorInfo(QList<QMap<QString,QVariant>> monitorInfoList)

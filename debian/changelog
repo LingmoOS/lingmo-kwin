@@ -1,3 +1,13 @@
+lingmo-kwin (5:6.0.19.lingmo5u1) unstable; urgency=medium
+
+  * fix: 修复多任务视图背景缓存无上限导致 kwin 内存持续增长
+    - MultiViewBackgroundManager 的 m_wpCachedPixmaps/m_bgCachedPixmaps
+      以 “壁纸 uri + 桌面 + 屏幕” 为键，且从不清理，换壁纸就会留下
+      一整份屏幕尺寸的 pixmap（1080p 约 8MB、4K 约 33MB）
+    - 改为按 (桌面,屏幕) 记录 uri 顺序，只保留最近 3 个
+
+ -- Lingmo OS Team <team@lingmo.org>  Tue, 13 Oct 2026 23:58:57 +0800
+
 lingmo-kwin (5:6.0.18.lingmo.1) unstable; urgency=medium
 
   * new release for Lingmo OS.

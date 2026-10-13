@@ -114,6 +114,10 @@ public:
     void getPreviewBackground(QSize size, QPixmap &workspaceBg, EffectScreen *screen);
     QPixmap cutBackgroundPix(const QSize &size, const QString &file);
     QPixmap getCachePix(const QSize &size, QPair<QSize, QPixmap> &pair);
+    void insertCachedBackground(QHash<QString, QPair<QSize, QPixmap>> &cache,
+                                QHash<QString, QList<QString>> &cachedUris,
+                                const QString &path, const QString &uri,
+                                const QPair<QSize, QPixmap> &value);
     void clearCurrentBackgroundList();
     QString getRandBackground();
 
@@ -148,6 +152,11 @@ private:
 
     QHash<QString, QPair<QSize, QPixmap>> m_wpCachedPixmaps;
     QHash<QString, QPair<QSize, QPixmap>> m_bgCachedPixmaps;
+    // 上面两个缓存的键是 “壁纸 uri + 桌面 + 屏幕”，换壁纸必然产生新键。
+    // 这里按 (桌面,屏幕) 记录 uri 的插入顺序，只保留最近若干个，
+    // 否则整屏尺寸的 pixmap 会随每次壁纸切换永久堆积。
+    QHash<QString, QList<QString>> m_wpCachedUris;
+    QHash<QString, QList<QString>> m_bgCachedUris;
     QList<QMap<QString,QVariant>> m_monitorInfoList;
 
 };
