@@ -1,3 +1,15 @@
+lingmo-kwin (5:6.0.20.lingmo5u1) unstable; urgency=medium
+
+  * fix: 降低多任务视图的内存占用与打开卡顿
+    - 背景缓存每 (桌面,屏幕) 只保留当前壁纸一条（原先留 3 条）。缓存里是整屏
+      尺寸的 pixmap（4K 单张约 33MB），多余条目在关闭视图后也不会释放
+    - 不再在 cleanup() 里销毁 9 个 QML 效果框。createEffectFrame() 本来就是
+      “只创建一次”的写法，但 cleanup() 把它们置空销毁，导致每次开关多任务视图
+      都要销毁并重建 9 个 QML 场景，既拖慢打开又持续吃内存；现在对象只创建一次，
+      属性每次进入视图重新下发
+
+ -- Lingmo OS Team <team@lingmo.org>  Wed, 14 Oct 2026 16:03:45 +0800
+
 lingmo-kwin (5:6.0.19.lingmo5u1) unstable; urgency=medium
 
   * fix: 修复多任务视图背景缓存无上限导致 kwin 内存持续增长
