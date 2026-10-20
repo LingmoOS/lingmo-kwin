@@ -340,6 +340,7 @@ void MultiViewBackgroundManager::getWorkspaceBgPath(BgInfo_st &st, QPixmap &desk
         backgroundUri = QLatin1String(fallback_background_name);
     m_currentBackgroundList.insert(backgroundUri);
     backgroundUri = toRealPath(backgroundUri);
+
     if (m_wpCachedPixmaps.contains(backgroundUri + strBackgroundPath)) {
         auto& p = m_wpCachedPixmaps[backgroundUri + strBackgroundPath];
         workspaceBg = getCachePix(st.workspaceSize, p);
@@ -351,13 +352,9 @@ void MultiViewBackgroundManager::getWorkspaceBgPath(BgInfo_st &st, QPixmap &desk
         workspaceBg = pixmap;
     }
 
-
-    QDBusInterface imageBlurInterface(DBUS_IMAGEEFFECT_SERVICE, DBUS_BLUR_OBJ, DBUS_BLUR_INTF, QDBusConnection::systemBus());
-    imageBlurInterface.setTimeout(100);
-    QDBusReply<QString> blurReply = imageBlurInterface.call("Get", backgroundUri);
-    if (!blurReply.value().isEmpty())
-        backgroundUri = toRealPath(QString(blurReply.value()));
-
+    // 优先从缓存中取已预处理的模糊壁纸（由 cacheWorkspaceBg 异步线程填充）。
+    // 不在主线程发起同步 D-Bus 调用，避免每次打开多任务视图时阻塞渲染主线程。
+    // 若缓存未命中则降级使用原始壁纸，视觉上稍有差异但不影响功能。
     if (m_bgCachedPixmaps.contains(backgroundUri + strBackgroundPath)) {
         auto& p = m_bgCachedPixmaps[backgroundUri + strBackgroundPath];
         desktopBg = getCachePix(st.desktopSize, p);
@@ -368,7 +365,6 @@ void MultiViewBackgroundManager::getWorkspaceBgPath(BgInfo_st &st, QPixmap &desk
                                backgroundUri, qMakePair(st.desktopSize, pixmap));
         desktopBg = pixmap;
     }
-
 }
 
 void MultiViewBackgroundManager::cacheWorkspaceBg(BgInfo_st &st)
@@ -784,6 +780,19 @@ MultitaskViewEffect::~MultitaskViewEffect()
         delete m_showActiona;
         m_showActiona = nullptr;
     }
+
+    // 释放 initWorkspaceBackground() 中复用的对象（cleanup() 不再销毁它们）
+    for (auto iter = m_workspaceBackgrounds.begin(); iter != m_workspaceBackgrounds.end(); ++iter) {
+        qDeleteAll(iter.value());
+    }
+    m_workspaceBackgrounds.clear();
+
+    for (auto iter = m_addWorkspaceButton.begin(); iter != m_addWorkspaceButton.end(); ++iter) {
+        delete iter.value();
+    }
+    m_addWorkspaceButton.clear();
+
+    m_tipFrames.clear();
 }
 
 void MultitaskViewEffect::reconfigure([[maybe_unused]] ReconfigureFlags flags)
@@ -1702,6 +1711,10 @@ void MultitaskViewEffect::onWindowClosed(EffectWindow *w)
     if (!m_activated)
         return;
 
+    // 对称释放 onWindowAdded / setActive(true) 中增加的引用计数，
+    // 避免窗口对象因引用计数不归零而永久驻留内存。
+    w->unrefVisibleEx(EffectWindow::PAINT_DISABLED_BY_MINIMIZE | EffectWindow::PAINT_DISABLED_BY_DESKTOP);
+
     if (w->windowClass() == screen_recorder && w != m_screenRecorderMenu) {
         effects->startMouseInterception(this, Qt::PointingHandCursor);
         if (QX11Info::isPlatformX11()) {
@@ -1723,6 +1736,11 @@ void MultitaskViewEffect::onWindowDeleted(EffectWindow *w)
 {
     if (!m_activated)
         return;
+
+    // 窗口被删除时同样需要释放引用，防止内存泄漏。
+    // onWindowDeleted 在 onWindowClosed 之后触发，此时窗口已不在
+    // stackingOrder 里，cleanup() 的遍历无法覆盖到它。
+    w->unrefVisibleEx(EffectWindow::PAINT_DISABLED_BY_MINIMIZE | EffectWindow::PAINT_DISABLED_BY_DESKTOP);
 
     if (w->isDock()) {
         m_dock = nullptr;
@@ -2474,13 +2492,9 @@ void MultitaskViewEffect::cleanup()
         }
     }
 
-    for (auto iter = m_workspaceBackgrounds.begin(); iter != m_workspaceBackgrounds.end(); iter++) {
-        QList<MultiViewWorkspace *> list = m_workspaceBackgrounds[iter.key()];
-        for (int j = 0; j < list.size(); j++) {
-            delete list[j];
-            list[j] = nullptr;
-        }
-    }
+    // MultiViewWorkspace、MultiViewAddButton、m_tipFrames 不在此销毁，
+    // 由 initWorkspaceBackground() 复用并按需更新内容，随本对象析构时一起释放。
+    // （原先每次 delete 再重建会导致 QML 场景树反复销毁/创建，内存持续增长。）
 
     m_maxHeight = 0;
     m_windowMove = nullptr;
@@ -2493,9 +2507,6 @@ void MultitaskViewEffect::cleanup()
 
     m_motionManagers.clear();
     m_workspaceWinMgr.clear();
-    m_addWorkspaceButton.clear();
-    m_workspaceBackgrounds.clear();
-    m_tipFrames.clear();
     m_flyingWinList.clear();
     m_notificationList.clear();
     MultiViewBackgroundManager::instance()->clearCurrentBackgroundList();
@@ -3049,12 +3060,23 @@ void MultitaskViewEffect::initWorkspaceBackground()
     int count = effects->numberOfDesktops();
     QHash<QString, ScreenInfo_st>::iterator it = m_screenInfoList.begin();
     for (; it != m_screenInfoList.end(); ++it) {
-        QList<MultiViewWorkspace *> list;
-        for (int i = 1; i <= count; i++) {
-            MultiViewWorkspace *b = new MultiViewWorkspace();
-            QRect rect = calculateWorkspaceRect(i, it.value().screen, it.value().rect);
+        EffectScreen *screen = it.value().screen;
+        QList<MultiViewWorkspace *> &existingList = m_workspaceBackgrounds[screen];
+
+        // 复用已有的 MultiViewWorkspace 对象，不足则补充，多余则释放。
+        // 避免每次打开多任务视图都销毁+重建 QML frame，减少内存碎片和启动延迟。
+        while (existingList.size() > count) {
+            delete existingList.takeLast();
+        }
+        while (existingList.size() < count) {
+            existingList.push_back(new MultiViewWorkspace());
+        }
+
+        for (int i = 0; i < count; i++) {
+            MultiViewWorkspace *b = existingList[i];
+            QRect rect = calculateWorkspaceRect(i + 1, screen, it.value().rect);
             BgInfo_st st;
-            st.desktop = i;
+            st.desktop = i + 1;
             st.screenName = it.value().name;
             st.desktopSize = it.value().screenrect.size();
             st.workspaceSize = rect.size();
@@ -3063,12 +3085,11 @@ void MultitaskViewEffect::initWorkspaceBackground()
             b->setArea(it.value().rect, it.value().screenrect);
             b->setMaxHeight(m_maxHeight);
             b->setImage(bgPix, wpPix, rect);
-            b->setScreenDesktop(it.value().screen, i);
-            list.push_back(b);
+            b->setScreenDesktop(screen, i + 1);
         }
-        m_workspaceBackgrounds[it.value().screen] = list;
 
-        {
+        // tipFrames 和 addButton 同样复用，只在首次为该屏幕创建。
+        if (!m_tipFrames.count(screen) || m_tipFrames[screen].empty()) {
             std::unique_ptr<EffectFrameEx> bgframe = effectsEx->effectFrameEx("kwin/effects/multitaskview/qml/hoverbg.qml", false);
             bgframe->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
             bgframe->setColor("#E0E0E0");
@@ -3079,20 +3100,37 @@ void MultitaskViewEffect::initWorkspaceBackground()
             font.setPointSize(12);
             frame->setFont(font);
             frame->setText(tr("No windows"));
-            frame->setPosition(QPoint(it.value().screenrect.width() / 2 + it.value().screenrect.x(), it.value().screenrect.height() / 2 + it.value().screenrect.y()));
-            m_tipFrames[it.value().screen].push_back(std::move(bgframe));
-            m_tipFrames[it.value().screen].push_back(std::move(frame));
+            m_tipFrames[screen].push_back(std::move(bgframe));
+            m_tipFrames[screen].push_back(std::move(frame));
+        }
+        // 每次更新 tipFrame 的位置（屏幕分辨率/排列可能已变）
+        m_tipFrames[screen][1]->setPosition(QPoint(it.value().screenrect.width() / 2 + it.value().screenrect.x(),
+                                                    it.value().screenrect.height() / 2 + it.value().screenrect.y()));
 
-            MultiViewAddButton *addButton = new MultiViewAddButton();
+        if (!m_addWorkspaceButton.contains(screen)) {
+            m_addWorkspaceButton[screen] = new MultiViewAddButton();
+        }
+        {
+            MultiViewAddButton *addButton = m_addWorkspaceButton[screen];
             QRect buttonRect(it.value().rect.x() + it.value().rect.width() - it.value().rect.width() * ADDBTN_W_SCALE,
                              it.value().rect.y() + it.value().rect.height() * ADDBTN_H_SCALE,
                              it.value().rect.width() * ADDBTN_SIZE_SCALE,
                              it.value().rect.width() * ADDBTN_SIZE_SCALE);
-            QString buttonImage = QLatin1String(add_workspace_png);
             addButton->setArea(it.value().rect, it.value().screenrect);
             addButton->setMaxHeight(m_maxHeight);
-            addButton->setImage(buttonImage, buttonRect);
-            m_addWorkspaceButton[it.value().screen] = addButton;
+            addButton->setImage(QLatin1String(add_workspace_png), buttonRect);
+        }
+    }
+
+    // 移除已不存在的屏幕对应的资源
+    for (auto sit = m_workspaceBackgrounds.begin(); sit != m_workspaceBackgrounds.end(); ) {
+        if (!m_screenInfoList.values().end() !=
+            std::find_if(m_screenInfoList.begin(), m_screenInfoList.end(),
+                         [&](const ScreenInfo_st &s){ return s.screen == sit.key(); })) {
+            for (auto *w : sit.value()) delete w;
+            sit = m_workspaceBackgrounds.erase(sit);
+        } else {
+            ++sit;
         }
     }
 
