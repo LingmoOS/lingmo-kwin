@@ -48,8 +48,6 @@
 //#include "multitouchgesture.h"       //to do
 
 Q_GLOBAL_STATIC_WITH_ARGS(QGSettings, _gsettings_dde_dock, ("com.deepin.dde.dock"))
-//Q_GLOBAL_STATIC_WITH_ARGS(QGSettings, _gsettings_dde_dock_primary, ("com.deepin.dde.dock.mainwindow"))
-Q_GLOBAL_STATIC_WITH_ARGS(QGSettings, _gsettings_dde_appearance, ("com.deepin.dde.appearance"))
 
 #define GsettingsDockPosition   "position"
 //#define GsettingsDockBottom     "bottom"
@@ -270,12 +268,6 @@ static QString toRealPath(const QString &path)
     if (fi.isSymLink()) {
         res = fi.symLinkTarget();
     }
-    return res;
-}
-
-static QString convertPath(const QString &path)
-{
-    QString res = QUrl::fromPercentEncoding(path.toUtf8());
     return res;
 }
 
