@@ -1,3 +1,18 @@
+lingmo-kwin (5:6.0.21.lingmo5u1) unstable; urgency=medium
+
+  * fix(multitaskview): resolve memory leak and startup lag
+    - add unrefVisibleEx() in onWindowClosed/onWindowDeleted to balance
+      refVisibleEx() in onWindowAdded; windows closed during multitasking
+      view were never unref'd, causing +50-100MB retained per cycle
+    - remove synchronous D-Bus call to imageblur service in
+      getWorkspaceBgPath(); blocked render thread once per desktop×screen
+      on every open; now uses cache-first lookup with async fallback
+    - reuse MultiViewWorkspace/MultiViewAddButton/tipFrames across
+      open/close cycles; initWorkspaceBackground() updates in-place
+      instead of delete+recreate, eliminating QML scene churn
+
+ -- Lingmo OS Team <team@lingmo.org>  Tue, 20 Oct 2026 18:00:00 +0800
+
 lingmo-kwin (5:6.0.20.lingmo5u1) unstable; urgency=medium
 
   * fix: 降低多任务视图的内存占用与打开卡顿
