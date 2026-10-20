@@ -3116,7 +3116,7 @@ void MultitaskViewEffect::initWorkspaceBackground()
 
     // 移除已不存在的屏幕对应的资源
     for (auto sit = m_workspaceBackgrounds.begin(); sit != m_workspaceBackgrounds.end(); ) {
-        if (!m_screenInfoList.values().end() !=
+        if (m_screenInfoList.end() ==
             std::find_if(m_screenInfoList.begin(), m_screenInfoList.end(),
                          [&](const ScreenInfo_st &s){ return s.screen == sit.key(); })) {
             for (auto *w : sit.value()) delete w;
